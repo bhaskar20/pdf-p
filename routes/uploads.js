@@ -15,25 +15,39 @@ var storage = multer.diskStorage({
 	}
 })
 //place filerestrictions/check file type in upload
+function fileFilter(req, file, cb){
+    //improve this by checking mimetype also along with extension only
+    if (path.extension(file.originalname) !== '.pdf') {
+        return cb(new Error('Only pdfs are allowed'))
+    }   
+    cb(null, true)
+}
 
-var upload = multer({storage:storage});
+var upload = multer({
+    storage: storage,
+    fileFilter: fileFilter
+});
+
 router.post('/uploads',upload.single('userpdf'),function (req, res) {
 	var pdf = new pdftotext(path.join(__dirname,'./../',req.file.path));
 	var passString = "-upw "+req.body.password;
 	pdf.add_options([passString,'-layout ']);
 	pdf.getText(function(err, data, cmd) {
-		if (err) {
-			console.error(err);
+        if (err) {
+            next(err);
+			//console.error(err);
 		}
 		else {
 			var fpath = path.join(__dirname,'./../textfiles',req.file.filename.slice(0, -4))+".txt";
 			fs.writeFile(fpath,data,function(err){
-				if(err){
-					console.error(err);
+                if (err) {
+                    next(err);
+					//console.error(err);
 				}
 				var parsedData = karvyParser.parseData(data,function(err,obj){
-					if(err){
-						console.error(err);
+                    if (err) {
+                        next(err);
+						//console.error(err);
 					}
 					res.send(obj);
 				})
@@ -41,4 +55,8 @@ router.post('/uploads',upload.single('userpdf'),function (req, res) {
 		}
 	})
 });
+
+
+
+
 module.exports = router;
