@@ -2,7 +2,7 @@
 var debug = require('debug')('my-application');
 var app = require('../app');
 
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 4000);
 
 app.use(function(err, req, res, next) {
     console.log(err);

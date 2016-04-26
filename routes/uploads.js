@@ -17,7 +17,7 @@ var storage = multer.diskStorage({
 //place filerestrictions/check file type in upload
 function fileFilter(req, file, cb){
     //improve this by checking mimetype also along with extension only
-    if (path.extension(file.originalname) !== '.pdf') {
+    if (path.extname(file.originalname) !== '.pdf') {
         return cb(new Error('Only pdfs are allowed'))
     }   
     cb(null, true)
@@ -28,21 +28,22 @@ var upload = multer({
     fileFilter: fileFilter
 });
 
-router.post('/uploads',upload.single('userpdf'),function (req, res) {
+router.post('/uploads',upload.single('userpdf'),function (req, res,next) {
 	var pdf = new pdftotext(path.join(__dirname,'./../',req.file.path));
 	var passString = "-upw "+req.body.password;
 	pdf.add_options([passString,'-layout ']);
 	pdf.getText(function(err, data, cmd) {
         if (err) {
+        	err.message = "Something went wrong, please check the password and try again";
+        	//console.error(err.message);
             next(err);
-			//console.error(err);
 		}
 		else {
 			var fpath = path.join(__dirname,'./../textfiles',req.file.filename.slice(0, -4))+".txt";
 			fs.writeFile(fpath,data,function(err){
                 if (err) {
+                	console.log(err.message);
                     next(err);
-					//console.error(err);
 				}
 				var parsedData = karvyParser.parseData(data,function(err,obj){
                     if (err) {
